@@ -1,19 +1,25 @@
 import requests
 import argparse
-import json
+import time
 
 ENDPOINT = "https://icanhazdadjoke.com/"
 
-
-def joke_lookup(num_jokes, search_term):
+def joke_lookup_search(num_jokes, search_term):
     headers = {"Accept": "application/json", "User-Agent": "dadjokes-test (https://github.com/jakmagaud/dadjokes-test)"}
-    if search_term:
-        print('hi')
-    else:
-        for i in range(num_jokes):
-            response = requests.get(url=ENDPOINT, headers=headers)
-            if response.status_code == 200:
-                print(response.json()["joke"])
+    for i in range(num_jokes):
+        response = requests.get(url=ENDPOINT + "/search", headers=headers, params={"term": search_term})
+        if response.status_code == 200:
+            results = response.json()["results"]
+            return results
+
+
+def joke_lookup_random(num_jokes):
+    headers = {"Accept": "application/json", "User-Agent": "dadjokes-test (https://github.com/jakmagaud/dadjokes-test)"}
+
+    for i in range(num_jokes):
+        response = requests.get(url=ENDPOINT, headers=headers)
+        if response.status_code == 200:
+            print(response.json()["joke"])
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
@@ -24,5 +30,21 @@ if __name__=="__main__":
     # set default values if user doesn't specify
     if not args.num_jokes:
         args.num_jokes = 1
-            
-    joke_lookup(num_jokes=args.num_jokes, search_term=args.search)
+    
+    if args.search:
+        results = joke_lookup_search(num_jokes=args.num_jokes, search_term=args.search)
+        joke_index = 0
+
+    end_time = time.time() + 60
+    while time.time() < end_time:
+        if args.search:
+            for i in range(args.num_jokes):
+                if joke_index < len(results):
+                    print(results[joke_index]["joke"])
+                    joke_index += 1
+                else:
+                    print("We're all out of jokes on that topic!")
+                    exit()
+        else:
+            joke_lookup_random(num_jokes=args.num_jokes)
+        time.sleep(15)
